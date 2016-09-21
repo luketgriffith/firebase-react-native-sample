@@ -46,7 +46,7 @@ class FirebaseReactNativeSample extends Component {
 
   componentWillMount() {
     let email = 'luketgriffith@gmail.com';
-    let password = 'Flippityflop2';
+    let password = 'greatpassword1';
 
     base.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
   // Handle Errors here.
