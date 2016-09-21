@@ -22,59 +22,82 @@ const {
   AlertIOS,
 } = ReactNative;
 
+import base from './config';
+
+
 // Initialize Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyC3ebdIS2Hyt0QDL7A4_QJC0Nuu6lK6jUE",
-  authDomain: "firereactbasenative.firebaseapp.com",
-  databaseURL: "https://firereactbasenative.firebaseio.com",
-  storageBucket: "",
-};
-const firebaseApp = firebase.initializeApp(firebaseConfig);
+
+// const firebaseApp = firebase.initializeApp(firebaseConfig);
 
 class FirebaseReactNativeSample extends Component {
 
   constructor(props) {
     super(props);
+    this.cancelButton = this.cancelButton.bind(this);
+    this.addWidget = this.addWidget.bind(this);
+    this.complete = this.complete.bind(this);
+
     this.state = {
       dataSource: new ListView.DataSource({
         rowHasChanged: (row1, row2) => row1 !== row2,
       })
     };
-    this.itemsRef = this.getRef().child('items');
   }
 
-  getRef() {
-    return firebaseApp.database().ref();
+  componentWillMount() {
+    let email = 'luketgriffith@gmail.com';
+    let password = 'Flippityflop2';
+
+    base.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
+  // Handle Errors here.
+      var errorCode = error.code;
+      var errorMessage = error.message;
+      // ...
+    })
   }
 
-  listenForItems(itemsRef) {
-    itemsRef.on('value', (snap) => {
-
-      // get children as an array
-      var items = [];
-      snap.forEach((child) => {
-        items.push({
-          title: child.val().title,
-          _key: child.key
+  componentDidMount(itemsRef) {
+    base.listenTo('widgets', {
+      context: this,
+      asArray: true,
+      then(data) {
+        this.setState({
+          dataSource: this.state.dataSource.cloneWithRows(data)
         });
-      });
-
-      this.setState({
-        dataSource: this.state.dataSource.cloneWithRows(items)
-      });
-
-    });
+      }
+    })
   }
 
-  componentDidMount() {
-    this.listenForItems(this.itemsRef);
+  cancelButton() {
+    AlertIOS.alert('You done canceled it, nice work')
+  }
+
+  addWidget(text) {
+    base.push('widgets', {
+      data: {
+        name: text,
+        age: 4
+      },
+      then(data) {
+      }
+    })
+  }
+
+  complete(item) {
+    console.log(item)
+    base.update('widgets/' + item.key, {
+      data: { completed: true },
+      then(data) {
+
+      }
+    })
   }
 
   render() {
     return (
       <View style={styles.container}>
 
-        <StatusBar title="Grocery List" />
+        <StatusBar title="Things" />
 
         <ListView
           dataSource={this.state.dataSource}
@@ -82,7 +105,7 @@ class FirebaseReactNativeSample extends Component {
           enableEmptySections={true}
           style={styles.listview}/>
 
-        <ActionButton onPress={this._addItem.bind(this)} title="Add" />
+        <ActionButton onPress={this._addItem.bind(this)} title="Add a Thing" />
 
       </View>
     )
@@ -93,12 +116,13 @@ class FirebaseReactNativeSample extends Component {
       'Add New Item',
       null,
       [
-        {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
+        {
+          text: 'Cancel',
+          onPress: () => this.cancelButton(), style: 'cancel'
+        },
         {
           text: 'Add',
-          onPress: (text) => {
-            this.itemsRef.push({ title: text })
-          }
+          onPress: (text) => this.addWidget(text)
         },
       ],
       'plain-text'
@@ -106,13 +130,13 @@ class FirebaseReactNativeSample extends Component {
   }
 
   _renderItem(item) {
-
+    console.log('wssdfadf', item)
     const onPress = () => {
       AlertIOS.alert(
         'Complete',
         null,
         [
-          {text: 'Complete', onPress: (text) => this.itemsRef.child(item._key).remove()},
+          {text: 'Complete', onPress: () => this.complete(item)},
           {text: 'Cancel', onPress: (text) => console.log('Cancelled')}
         ]
       );
